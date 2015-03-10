@@ -9,6 +9,16 @@
 
 @implementation NSInvocation(OCMAdditions)
 
+- (BOOL)isArgumentAtIndexAnObject:(int)argIndex
+{
+    const char *argType = OCMTypeWithoutQualifiers([[self methodSignature] getArgumentTypeAtIndex:argIndex]);
+
+    if((strlen(argType) > 1) && (strchr("{^", argType[0]) == NULL) && (strcmp("@?", argType) != 0))
+        [NSException raise:NSInvalidArgumentException format:@"Cannot handle argument type '%s'.", argType];
+
+    return argType[0] == '@' || argType[0] == '#';
+}
+
 - (id)getArgumentAtIndexAsObject:(int)argIndex
 {
 	const char *argType = OCMTypeWithoutQualifiers([[self methodSignature] getArgumentTypeAtIndex:argIndex]);

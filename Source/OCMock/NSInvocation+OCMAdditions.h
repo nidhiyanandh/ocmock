@@ -9,6 +9,8 @@
 
 - (id)getArgumentAtIndexAsObject:(int)argIndex;
 
+- (BOOL)isArgumentAtIndexAnObject:(int)argIndex;
+
 - (NSString *)invocationDescription;
 
 - (NSString *)argumentDescriptionAtIndex:(int)argIndex;

@@ -10,6 +10,7 @@
 #import "OCObserverMockObject.h"
 #import <OCMock/OCMockRecorder.h>
 #import <OCMock/OCMLocation.h>
+#import <Foundation/Foundation.h>
 #import "NSInvocation+OCMAdditions.h"
 #import "OCMInvocationMatcher.h"
 #import "OCMMacroState.h"
@@ -90,7 +91,14 @@
 	[expectations release];
 	[rejections	release];
 	[exceptions release];
+
+    for (NSInvocation *invocation in invocations) {
+        [self _performBlock:^(id object) {
+            [object release];
+        } onObjectArgumentsOfInvocation:invocation];
+    }
 	[invocations release];
+
 	[super dealloc];
 }
 
@@ -225,6 +233,14 @@
 	OCMockRecorder *recorder = nil;
 	unsigned int			   i;
 
+    // [NSInvocation retainArguments] should work here, except it
+    // also retains the target of the invocation (which is ourselves).
+    // Because we retain the invocation, this results in a retain cycle.
+    // Only retain the arguments here.
+    [self _performBlock:^(id object) {
+        [object retain];
+    } onObjectArgumentsOfInvocation:anInvocation];
+
     [invocations addObject:anInvocation];
 	
 	for(i = 0; i < [recorders count]; i++)
@@ -328,5 +344,23 @@
 	return outputString;
 }
 
+typedef void (^OCMockInvocationObjectArgumentBlock)(id object);
+- (void)_performBlock:(OCMockInvocationObjectArgumentBlock)block onObjectArgumentsOfInvocation:(NSInvocation *)anInvocation;
+{
+
+    NSUInteger numberOfArguments = anInvocation.methodSignature.numberOfArguments;
+
+    // Self and _cmd are the first two arguments, which we don't care about.
+    // Start at 2.
+    for (NSUInteger i = 2; i < numberOfArguments; i++) {
+        if (![anInvocation isArgumentAtIndexAnObject:i]) {
+            continue;
+        }
+
+        id argument;
+        [anInvocation getArgument:&argument atIndex:i];
+        block(argument);
+    }
+}
 
 @end
