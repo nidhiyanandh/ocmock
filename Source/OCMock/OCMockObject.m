@@ -93,9 +93,9 @@
 	[exceptions release];
 
     for (NSInvocation *invocation in invocations) {
-        [self _performBlock:^(id object) {
+        [self _enumerateObjectArgumentsOfInvocation:invocation usingBlock:^(id object) {
             [object release];
-        } onObjectArgumentsOfInvocation:invocation];
+        }];
     }
 	[invocations release];
 
@@ -237,9 +237,9 @@
     // also retains the target of the invocation (which is ourselves).
     // Because we retain the invocation, this results in a retain cycle.
     // Only retain the arguments here.
-    [self _performBlock:^(id object) {
+    [self _enumerateObjectArgumentsOfInvocation:anInvocation usingBlock:^(id object) {
         [object retain];
-    } onObjectArgumentsOfInvocation:anInvocation];
+    }];
 
     [invocations addObject:anInvocation];
 	
@@ -345,15 +345,15 @@
 }
 
 typedef void (^OCMockInvocationObjectArgumentBlock)(id object);
-- (void)_performBlock:(OCMockInvocationObjectArgumentBlock)block onObjectArgumentsOfInvocation:(NSInvocation *)anInvocation;
-{
+
+- (void)_enumerateObjectArgumentsOfInvocation:(NSInvocation *)anInvocation usingBlock:(OCMockInvocationObjectArgumentBlock)block {
 
     NSUInteger numberOfArguments = anInvocation.methodSignature.numberOfArguments;
 
     // Self and _cmd are the first two arguments, which we don't care about.
     // Start at 2.
     for (NSUInteger i = 2; i < numberOfArguments; i++) {
-        if (![anInvocation isArgumentAtIndexAnObject:i]) {
+        if (![anInvocation argumentAtIndexIsObject:i]) {
             continue;
         }
 
